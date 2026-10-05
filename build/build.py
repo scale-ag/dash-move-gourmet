@@ -1,32 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gera a dashboard estatica (index.html) a partir de 4 abas da planilha central
-<<PREENCHER: nome da planilha central do cliente>>:
+Gera a dashboard estatica (index.html) do funil "Move Gourmet" (cliente Fernanda).
 
-  - "Conversas" (gid <<PREENCHER: GID_CONVERSAS>>): fonte PRINCIPAL de leads — webhook
-    de mensageria disparado na 1a mensagem recebida no WhatsApp Business. Usada em
-    TODOS os graficos/cards/tabelas/calculos de conversao.
-  - "Leads" (gid <<PREENCHER: GID_LEADS>>): fonte ANTIGA (popup/form legado). So e
-    contada (total), nunca entra em grafico/card/tabela/conversao.
-  - "Meta Ads" (gid <<PREENCHER: GID_META>>): investimento/impressoes/cliques do gerenciador.
-  - "New Subscriptions" / Compradores (gid <<PREENCHER: GID_SALES>>): usada para cruzar por
-    TELEFONE com a Conversas e atribuir Venda/Faturamento ao anuncio de origem.
+Esta conta tem UMA unica aba na planilha central: "Pagina1" (Meta Ads). Nao ha
+abas de Conversas, Leads (legado) nem Compradores (New Subscriptions). Portanto:
 
-Criterio de Lead Qualificado (MQL): coluna de qualificacao do cliente
-(<<PREENCHER: nome da coluna de MQL, ex. "E medico?">>) == "Sim". Ajuste is_medico()
-e os aliases de coluna em process() para o criterio deste cliente.
+  - "Meta Ads" (gid GID_META): investimento/impressoes/cliques/conversas do
+    gerenciador. Colunas: Day, Campaign Name, Ad Set Name, Ad Name, Impressions,
+    Link Clicks, Messaging Conversations Started, Amount Spent.
+  - LEADS: como e' uma campanha de MENSAGENS (MSG/WhatsApp), cada "lead" e' uma
+    CONVERSA INICIADA ("Messaging Conversations Started"). Nao existe aba de
+    Conversas separada — os leads sao SINTETIZADOS a partir dessa coluna do Meta
+    (um registro por conversa, herdando data/campanha/conjunto/anuncio da linha).
+  - MQL / VENDAS / FATURAMENTO: nao ha fonte para esses estagios nesta conta
+    (sem coluna de qualificacao, sem aba de compradores) -> aparecem como lacuna
+    ("-") no dashboard (flags has_mql/has_sales = False).
 
-Este script apenas LE as planilhas (export CSV publico) e emite os REGISTROS
-BRUTOS (leads[], meta[] e sales[]) dentro do HTML. sales[] tem um registro POR
-COMPRA (nunca agregado por telefone), com a DATA REAL da compra — camp/adset/ad
-vem da 1a conversa daquele telefone (atribuicao do anuncio de origem), mas a
-data nunca e' a da conversa, senao vendas de dias diferentes seriam somadas no
-mesmo dia. Todos os filtros, agregacoes, KPIs, tabelas e graficos sao
-calculados no navegador (client-side). Nunca escreve nada de volta.
+Este script apenas LE a planilha (export CSV publico) e emite os REGISTROS
+BRUTOS (leads[]/meta[]/sales[]) dentro do HTML. Todos os filtros, agregacoes,
+KPIs, tabelas e graficos sao calculados no navegador (client-side). Nunca
+escreve nada de volta.
 
-Teste local: --conversas-file / --meta-file / --sales-file / --leads-file
-apontando para CSVs baixados.
+Teste local: --meta-file (e, se um dia existirem, --conversas-file /
+--sales-file / --leads-file) apontando para CSVs baixados.
 """
 from __future__ import annotations
 
@@ -43,19 +40,22 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-SPREADSHEET_ID = "<<PREENCHER: ID da planilha central (Google Sheets) do cliente>>"
-GID_CONVERSAS = "<<PREENCHER: gid da aba de Conversas / fonte principal de leads>>"
-GID_LEADS = "<<PREENCHER: gid da aba de Leads legado (popup/form) — só contada>>"
-GID_META = "<<PREENCHER: gid da aba Meta Ads>>"
-GID_SALES = "<<PREENCHER: gid da aba de Compradores (New Subscriptions) — cruzada por telefone>>"
+SPREADSHEET_ID = "1MnBVUg6ZdmR3FsUPy6ppjCAGno5moQJkUWDTrd-5POQ"  # "Extração dashboard atualizado"
+GID_META = "0"        # aba "Página1" (Meta Ads) — primeira/única aba da planilha
+# Esta conta NÃO tem as abas Conversas/Leads/Compradores. Mantidas vazias de
+# propósito: main() não busca essas abas; os leads vêm das conversas iniciadas
+# da própria aba de Meta Ads (ver process()).
+GID_CONVERSAS = ""    # não existe nesta conta
+GID_LEADS = ""        # não existe nesta conta
+GID_SALES = ""        # não existe nesta conta
 EXPORT_URL = "https://docs.google.com/spreadsheets/d/{sid}/export?format=csv&gid={gid}"
 
 # Identificação do cliente/conta (usada só em textos/relatórios — não afeta o cruzamento de dados).
-CLIENT_NAME = "<<PREENCHER: nome do cliente>>"
-MAIN_PRODUCT = "<<PREENCHER: nome do produto/oferta principal>>"
+CLIENT_NAME = "Fernanda"
+MAIN_PRODUCT = "Move Gourmet"
 # Prefixo comum a TODAS as campanhas da conta (usado para agrupar campanhas no
-# dashboard). Ajuste ao padrão de nomenclatura de campanha deste cliente.
-MAIN_PRODUCT_PREFIX = "<<PREENCHER: prefixo das campanhas do cliente, ex. NOMECLIENTE>>"
+# dashboard). Padrão de nomenclatura: MOVE | E2-CAP | P3-FRIO | MSG | ABO | <data> | <cidade> | ...
+MAIN_PRODUCT_PREFIX = "MOVE"
 
 BRT = timezone(timedelta(hours=-3))   # horario de Brasilia (exibicao)
 TAX_FACTOR = 1.13806   # fator padrão de imposto/taxa sobre o gasto de mídia paga (Meta Ads) = 13,806%.
@@ -166,11 +166,11 @@ def is_test_lead(rowtext: str) -> bool:
     return "<test lead" in rowtext.lower()
 
 
-# <<PREENCHER: critério de MQL deste cliente>> — implementação de referência abaixo
-# usa uma coluna booleana "Sim/Não". Renomeie a função e ajuste conforme o critério
-# de qualificação do cliente (o exemplo abaixo qualifica pela coluna de MQL == "Sim").
+# Esta conta NÃO tem estágio de MQL (não há coluna de qualificação na planilha).
+# Os leads sintetizados saem com q=0 e o dashboard trata MQL como lacuna ("-").
+# A função fica como ponto de extensão para quando existir critério de qualificação.
 def is_medico(v: str | None) -> bool:
-    """Critério de MQL: coluna de qualificação (<<PREENCHER: nome da coluna>>) == "Sim"."""
+    """Critério de MQL (não usado nesta conta): coluna de qualificação == "Sim"."""
     return norm(v) in ("sim", "s", "yes", "true", "1")
 
 
@@ -320,8 +320,8 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
     sales_index = build_sales_index(sales_rows)
 
     cheader = conversas_rows[0] if conversas_rows else []
-    # <<PREENCHER: aliases da coluna de MQL do cliente>> — "medico" abaixo é o exemplo
-    # (ajuste os aliases e o índice de fallback ao cabeçalho da aba Conversas do cliente).
+    # Esta conta não tem aba de Conversas (conversas_rows vem vazio); o bloco abaixo
+    # fica inerte e os leads são sintetizados da aba de Meta Ads mais adiante.
     cidx = header_index(
         cheader,
         {"created": ["data"], "phone": ["telefone"], "name": ["nome"],
@@ -408,6 +408,9 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
         {"day": ["day", "data"], "campaign": ["campaign name", "campaign"], "adset": ["ad set name", "adset"],
          "ad": ["ad name"], "spent": ["amount spent", "valor gasto", "gasto"], "impr": ["impressions", "impress"],
          "clicks": ["link clicks", "clicks", "cliques"], "leads": ["leads"],
+         # Conversas iniciadas (campanha de mensagens) — fonte dos LEADS desta conta.
+         "conv": ["messaging conversations started", "conversations started",
+                  "conversations", "conversas iniciadas", "conversas"],
          "pv": ["landing page views", "page views", "pageviews"],
          # Cliente não tem evento "Initiate Checkout" configurado no pixel — usa
          # "Adds to Cart" como proxy de Checkout (decisão do cliente).
@@ -417,7 +420,8 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
          # o anúncio. Aliases cobrem variações do cabeçalho.
          "link": ["creative instagram permalink", "instagram permalink", "permalink",
                   "creative link", "link do anuncio", "link do criativo"]},
-        {"day": 0, "campaign": 2, "adset": 3, "ad": 4, "spent": 5, "impr": 6, "clicks": 7, "leads": None, "pv": 8},
+        {"day": 0, "campaign": 1, "adset": 2, "ad": 3, "spent": 7, "impr": 4, "clicks": 5,
+         "conv": 6, "leads": None, "pv": None},
     )
 
     meta = []
@@ -445,6 +449,36 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
             "ml": to_float(cell(row, midx["leads"])),
         })
 
+    # Leads = CONVERSAS INICIADAS (campanha de mensagens). Esta conta não tem aba
+    # de Conversas, então cada conversa iniciada ("Messaging Conversations Started"
+    # da aba de Meta Ads) vira um registro de lead, herdando data/campanha/conjunto/
+    # anúncio da linha do Meta. q=0 (não há critério de MQL) → MQL/Vendas/Faturamento
+    # ficam como lacuna ("-") no dashboard. Só sintetizamos quando não veio uma aba
+    # de Conversas de verdade (compatível com o template original, caso um dia venha).
+    if not leads:
+        for row in meta_rows[1:]:
+            if not any((c or "").strip() for c in row):
+                continue
+            n_conv = int(round(to_float(cell(row, midx["conv"]))))
+            if n_conv <= 0:
+                continue
+            d = parse_date(cell(row, midx["day"]))
+            camp = cell(row, midx["campaign"]) or "(sem campanha)"
+            adset = cell(row, midx["adset"]) or "(sem conjunto)"
+            ad = cell(row, midx["ad"]) or "(sem anúncio)"
+            # Cidade: 7º campo do Campaign Name (MOVE | E2-CAP | P3-FRIO | MSG | ABO
+            # | <data> | <CIDADE> | ...). Usada como "faixa" (bucket) nos gráficos de
+            # distribuição; o conjunto (adset) vira a dimensão de "profissão/público".
+            parts = [p.strip() for p in camp.split("|")]
+            city = parts[6].title() if len(parts) > 6 and parts[6].strip() else "—"
+            for _ in range(n_conv):
+                leads.append({
+                    "d": d, "src": "meta", "plat": "ig",
+                    "camp": camp, "adset": adset, "ad": ad,
+                    "prof": adset, "bucket": city,
+                    "q": 0, "utm": 1, "nm": "—", "em": "—", "ph": "—",
+                })
+
     # Leads (LP) — fonte antiga, fora de uso. Só contamos o total para
     # referência (não entra em leads[]/gráficos/tabelas/conversão).
     leads_lp_total = sum(
@@ -455,6 +489,10 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
     dates = sorted({d for d in (
         [l["d"] for l in leads if l["d"]] + [m["d"] for m in meta if m["d"]] + [s["d"] for s in sales if s["d"]]
     )})
+    # Flags de estágio: há critério de MQL? há vendas? (lidas pelo front para
+    # exibir MQL/Vendas/Faturamento como lacuna "-" quando não há fonte).
+    has_mql = any(l.get("q") for l in leads)
+    has_sales = bool(sales)
     now_brt = datetime.now(BRT)
     return {
         "build": {
@@ -464,6 +502,9 @@ def process(conversas_rows, meta_rows, sales_rows, leads_lp_rows):
             "date_min": dates[0] if dates else None,
             "date_max": dates[-1] if dates else None,
             "tax_factor": TAX_FACTOR,
+            # estágios disponíveis nesta conta (False => exibir como lacuna "-")
+            "has_mql": has_mql,
+            "has_sales": has_sales,
             # config da aba Relatório (lida pelo front)
             "sample_min_spend": SAMPLE_MIN_SPEND,
             "sample_min_mqls": SAMPLE_MIN_MQLS,
@@ -543,10 +584,14 @@ def main():
     ap.add_argument("--out", default="dist/index.html")
     args = ap.parse_args()
 
-    conversas_rows = load_rows(EXPORT_URL.format(sid=SPREADSHEET_ID, gid=GID_CONVERSAS), args.conversas_file)
+    # Esta conta só tem a aba de Meta Ads. Buscamos apenas ela; Conversas/Compradores/
+    # Leads-LP não existem (ficam vazias) — os leads saem das conversas iniciadas do
+    # próprio Meta (ver process()). Os argumentos --*-file seguem disponíveis para
+    # teste local / futuras fontes.
     meta_rows = load_rows(EXPORT_URL.format(sid=SPREADSHEET_ID, gid=GID_META), args.meta_file)
-    sales_rows = load_rows(EXPORT_URL.format(sid=SPREADSHEET_ID, gid=GID_SALES), args.sales_file)
-    leads_lp_rows = load_rows(EXPORT_URL.format(sid=SPREADSHEET_ID, gid=GID_LEADS), args.leads_file)
+    conversas_rows = read_csv_file(args.conversas_file) if args.conversas_file else []
+    sales_rows = read_csv_file(args.sales_file) if args.sales_file else []
+    leads_lp_rows = read_csv_file(args.leads_file) if args.leads_file else []
 
     data = process(conversas_rows, meta_rows, sales_rows, leads_lp_rows)
 

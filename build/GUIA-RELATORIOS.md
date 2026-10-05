@@ -73,21 +73,25 @@ os Insights.
 
 ## Contexto do funil
 
-**Funil de High Ticket (<<PREENCHER: nome do cliente>>)** — <<PREENCHER: descrição
-curta do cliente/oferta>>. Funil de captura via WhatsApp com venda 1:1 (comercial
-fecha por conversa/reunião, não carrinho direto): o anúncio no Meta Ads leva
-a uma página de captura com botão do WhatsApp; ao clicar, o lead chama no
-WhatsApp Business do cliente e o webhook de mensageria dispara na 1ª mensagem,
-que cai na aba **Conversas** (fonte principal de leads deste dashboard). O
-critério de qualificação (MQL) é <<PREENCHER: critério de MQL do cliente, ex.
-"o lead ser médico">> — se qualificado, segue a conversa com o comercial até a
-venda (registrada na aba de Compradores e cruzada de volta ao anúncio por telefone).
+**Funil Move Gourmet (cliente Fernanda)** — captação de leads via WhatsApp a
+partir de anúncios de **mensagens** no Meta Ads (objetivo MSG). O anúncio abre
+uma conversa no WhatsApp Business; cada **conversa iniciada** (coluna
+`Messaging Conversations Started`) é contada como **lead** deste dashboard.
+
+> ℹ️ **Nesta conta só há dados de Meta Ads.** Não existe aba de Conversas com
+> qualificação, nem aba de Compradores. Portanto **não há estágio de MQL, nem
+> Vendas/Faturamento** — essas etapas aparecem como lacuna (“-”) até surgir uma
+> fonte para elas (`has_mql = False` / `has_sales = False` em `build.py`). O
+> ranking de anúncios (Top/Piores) usa **Leads** e **CPL** como resultado mais
+> profundo disponível.
 
 ```
-Impressões → Cliques/abertura do WhatsApp → Leads → MQLs → Vendas → Faturamento
+Funil efetivo nesta conta:   Impressões → Cliques → Leads (conversas iniciadas)
+Funil completo (quando houver fonte): … → Leads → MQLs → Vendas → Faturamento
 ```
 
-- **MQL** = coluna de qualificação (<<PREENCHER: nome da coluna de MQL>>) == "Sim" (ver `build.py` → `is_medico`).
+- **Lead** = uma conversa iniciada no WhatsApp pelo anúncio (sintetizada da aba de Meta Ads em `build.py` → `process()`).
+- **MQL / Vendas / Faturamento** = sem fonte nesta conta → “-”.
 - **Agendamento** = o lead qualificado marcou horário de reunião com o comercial.
 - **Reunião Realizada** = a reunião de fato aconteceu (o lead compareceu). O
   inverso disso é o **No‑Show** (agendou e não compareceu) — a métrica de alerta

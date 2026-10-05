@@ -4,15 +4,18 @@
 > Ele carrega TODO o contexto necessário para continuar o trabalho sem depender
 > de mensagens anteriores. Mantenha-o atualizado.
 >
-> **Este é um TEMPLATE limpo.** Todos os valores específicos do cliente estão
-> marcados como `<<PREENCHER: descrição>>`. Siga o CHECKLIST abaixo para
-> configurar um cliente novo.
+> **Este repositório já está configurado** para o cliente **Fernanda / funil
+> Move Gourmet**. É uma conta **só de Meta Ads**: os "leads" são as **conversas
+> iniciadas** (`Messaging Conversations Started`) e **não há** estágio de MQL,
+> nem Vendas/Faturamento (aparecem como "-"; `has_mql`/`has_sales` = False em
+> `build.py`). O CHECKLIST abaixo fica como referência de template para replicar
+> para OUTROS clientes.
 
 ---
 
-## ✅ CHECKLIST DE NOVO CLIENTE (fazer em ordem)
+## ✅ CHECKLIST DE NOVO CLIENTE (referência de replicação)
 
-Preencha cada `<<PREENCHER: …>>` do repositório. Ordem sugerida:
+Para um cliente novo, preencher na seguinte ordem:
 
 1. **`build/build.py` — constantes do topo:**
    - `SPREADSHEET_ID` — ID da planilha central do Google Sheets do cliente.
@@ -69,27 +72,35 @@ puro + Chart.js via CDN) publicado no **GitHub Pages**, que cruza a lista de
 **Leads** com o gerenciador de mídia paga e se atualiza sozinho a cada ~30 min
 (build 100% na nuvem via GitHub Actions, disparado externamente pelo cron-job.org).
 
-- **URL pública:** `https://<<PREENCHER: owner do GitHub>>.github.io/<<PREENCHER: nome do repositório>>/`
-- **Somente leitura** das planilhas. Nunca escrever de volta.
+- **URL pública:** `https://scale-ag.github.io/dash-move-gourmet/`
+- **Somente leitura** da planilha. Nunca escrever de volta.
 
 ## Fontes de dados (Google Sheets)
 
-Spreadsheet ID: `<<PREENCHER: SPREADSHEET_ID>>` ("<<PREENCHER: nome da planilha central>>").
+Spreadsheet ID: `1MnBVUg6ZdmR3FsUPy6ppjCAGno5moQJkUWDTrd-5POQ` ("Extração dashboard atualizado").
+
+**Esta conta tem UMA aba** (só Meta Ads). Não existem as abas Conversas / Leads
+(legado) / New Subscriptions do template — os leads são as **conversas iniciadas**
+da própria aba de Meta Ads (sintetizadas em `build.py`).
 
 | Aba | gid | Colunas usadas |
 |-----|-----|----------------|
-| **Conversas** (fonte principal — webhook de mensageria/WhatsApp) | `<<PREENCHER: GID_CONVERSAS>>` | `Data` · `Mensagem` · `Nome` · `Telefone` · coluna de MQL · `Campanha` · `Conjunto` · `Anúncio` · `Especialidades` |
-| **Leads** (legado — popup/form antigo, só contada) | `<<PREENCHER: GID_LEADS>>` | `Data` · `Nome` · `Email` · `Telefone` · coluna de MQL · `Especialidade` · `utm_*` · `MQL` · `Compra Detectada`/`Faturamento Detectado`/`Data Compra` |
-| **Meta Ads** | `<<PREENCHER: GID_META>>` | `Day` · `Ad ID` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Amount Spent` · `Impressions` · `Link Clicks` · `Landing Page Views` · `Content Views` · `Adds to Cart` · `Subscriptions` · `Subscribe Conversion Value` |
-| **New Subscriptions** (Compradores) | `<<PREENCHER: GID_SALES>>` | `Data` · `Nome` · `Email` · `Telefone` · `Produto` · `Oferta` · `Faturamento` · `Receita` · `Método de Pagamento` · `Campanha` · `Conjunto` · `Anúncio` · `UF` · `Cidade` · `Zip Code` · `Endereço` |
+| **Página1** (Meta Ads — única aba) | `0` | `Day` · `Campaign Name` · `Ad Set Name` · `Ad Name` · `Impressions` · `Link Clicks` · `Messaging Conversations Started` · `Amount Spent` |
+
+> Diferenças vs. o template: **não há** `Ad ID`, `Landing Page Views`, `Content
+> Views`, `Adds to Cart`, `Subscriptions` nem `Subscribe Conversion Value` — as
+> métricas que dependem dessas colunas (Page Views, Checkouts, etc.) ficam "-".
+> A coluna **`Messaging Conversations Started`** é a fonte dos **Leads**.
 
 URL de export CSV: `https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<GID>`
 
 ### Regra de Lead Qualificado (MQL)
-Coluna de qualificação (<<PREENCHER: nome da coluna de MQL, ex. "É médico?">>) == "Sim".
-Lógica em `build.py` → `is_medico`. O gráfico "Leads por especialidade" (`app.js`,
-`renderGeralCore`) colore verde/cinza pelo mesmo critério, usando a coluna
-`Especialidades`/`Especialidade` como dimensão.
+**Não se aplica nesta conta** — não há coluna/critério de qualificação. Os leads
+saem com `q=0` e `has_mql=False` → MQL/Tx‑MQL/CPMQL aparecem como "-" no dashboard
+(ver gating por `HAS_MQL` em `app.js`). A função `is_medico` em `build.py` fica
+como ponto de extensão caso um dia exista critério de qualificação. No lugar da
+"especialidade", os gráficos de distribuição usam **cidade** (do Campaign Name) e
+**conjunto** (Ad Set) como dimensões.
 
 ### Vendas & Faturamento (cruzamento com Compradores)
 `build.py` → `build_sales_index()` lê a aba **New Subscriptions** e indexa por
@@ -127,13 +138,14 @@ volta ao gasto sem imposto. Se o cliente tiver um fator diferente, ajuste
 `TAX_FACTOR`; se não houver imposto, use `TAX_FACTOR = 1.0`.
 
 ### Convenções de campanha (do cliente)
-Todas as campanhas usam o prefixo `<<PREENCHER: MAIN_PRODUCT_PREFIX>>`
-(`MAIN_PRODUCT_PREFIX`), sem filtrar por sub-funil — mantém TODAS as campanhas
-no dashboard. Ajuste o prefixo e, se o cliente usar siglas de etapa
-(ex. `<<PREENCHER: siglas de etapa, se houver>>`), documente-as aqui. A Conversas
-já traz `Campanha`/`Conjunto`/`Anúncio` prontos (nomes idênticos ao
-`Campaign Name`/`Ad Set Name`/`Ad Name` do Meta Ads) — `build.py` só copia esses
-valores, sem precisar de UTM nessa aba.
+Todas as campanhas usam o prefixo `MOVE` (`MAIN_PRODUCT_PREFIX`), sem filtrar por
+sub-funil — mantém TODAS as campanhas no dashboard. Padrão de nomenclatura
+(pipes): `MOVE | E2-CAP | P3-FRIO | MSG | ABO | <data> | <CIDADE> | <variação>`.
+A **sigla do funil é `E2-CAP`** (Etapa 2 – Captação; bate com o subtítulo
+"Captação de leads"); `P3-FRIO` = público frio, `MSG` = objetivo mensagens,
+`ABO` = orçamento por conjunto. A aba de Meta Ads já traz `Campaign Name`/
+`Ad Set Name`/`Ad Name` — `build.py` copia esses valores para `camp`/`adset`/`ad`
+e extrai a **cidade** (7º campo do Campaign Name) como dimensão de distribuição.
 
 ## Arquitetura / arquivos
 
