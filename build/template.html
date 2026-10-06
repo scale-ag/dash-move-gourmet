@@ -68,7 +68,7 @@
         <h2 class="sec-title">Funil de leads &amp; evolução diária</h2>
         <div class="grid funnel-grid">
           <div class="card"><div class="funnel" id="geralFunnel"></div>
-            <p class="note"><b>Leads = conversas iniciadas</b> no WhatsApp pelo anúncio (coluna “Messaging Conversations Started” do Meta Ads). MQL/Vendas/Faturamento não têm fonte nesta conta e aparecem como “-”.</p>
+            <p class="note"><b>Leads = conversas iniciadas</b> no WhatsApp pelo anúncio (coluna “Messaging Conversations Started” do Meta Ads). O funil vai até <b>Leads</b> — esta conta não tem estágios de MQL/Vendas/Faturamento.</p>
           </div>
           <div class="panel">
             <div class="panel-chart"><h3>Evolução diária</h3><p class="hint">Leads (barras) · Gasto (linha vermelha) · CPL (linha)</p><div class="chart-box"><canvas id="gCombo"></canvas></div></div>
@@ -94,7 +94,7 @@
         <h2 class="sec-title">Funil de tráfego pago (Meta Ads) &amp; combinação diária</h2>
         <div class="grid funnel-grid">
           <div class="card"><div class="funnel" id="metaFunnel"></div>
-            <p class="note">Page Views / MQL / Vendas / Faturamento não têm fonte nesta conta (aparecem “-”). <b>Leads = conversas iniciadas</b> pelo anúncio (Meta Ads).</p>
+            <p class="note"><b>Leads = conversas iniciadas</b> pelo anúncio (Meta Ads). Funil: Impressões → Cliques → Leads.</p>
           </div>
           <div class="panel">
             <div class="panel-chart"><h3>Combinação diária</h3><p class="hint">Leads (barras) · Gasto (linha vermelha) · CPL (linha)</p><div class="chart-box"><canvas id="mCombo"></canvas></div></div>
@@ -104,9 +104,8 @@
         </div>
 
         <h2 class="sec-title">Anúncios · Leads · CPL</h2>
-        <div class="trio">
+        <div class="duo">
           <div class="card"><h3>Leads por anúncio</h3><p class="hint">Top 10 · conversas iniciadas</p><div class="chart-box chart-sm"><canvas id="mMqlAd"></canvas></div></div>
-          <div class="card"><h3>Qualificação (MQL)</h3><p class="hint">Sem estágio de MQL nesta conta — conversas não são qualificadas</p><div class="donut-wrap"><canvas id="mQlfDonut"></canvas><div class="donut-center"><div class="dc-val" id="mQlfPct">-</div><div class="dc-lbl">Tx‑MQL</div></div></div></div>
           <div class="card" style="padding:0"><div style="padding:14px 15px 4px"><h3>Compilado dos Anúncios</h3><p class="hint" style="margin:0">Menor CPL no topo · por anúncio</p></div><div class="tbl-wrap" style="max-height:214px;padding:0 0 10px"><table class="dt" id="mTopCac"></table></div></div>
         </div>
 
@@ -163,13 +162,11 @@
         <!-- ---- Metas & parâmetros (editável) — ajusta cores e amostra ao vivo ---- -->
         <div class="rel-metas card">
           <div class="rel-metas-head">
-            <div><b>Metas &amp; parâmetros da conta</b> <span class="hint">preencha as metas → as tabelas de anúncios coloram CPMQL/CAC e a classificação de amostra se ajustam na hora (fica salvo neste navegador).</span></div>
+            <div><b>Metas &amp; parâmetros da conta</b> <span class="hint">define a amostra mínima para um anúncio ser <b>Avaliável</b> (senão fica <b>Em observação</b>). Salvo neste navegador.</span></div>
             <button class="btn" id="relMetasReset" type="button">Restaurar padrão</button>
           </div>
           <div class="rel-metas-grid">
-            <label class="rel-meta"><span>Meta CPMQL (R$)</span><input type="number" id="metaCpmql" min="0" step="1" inputmode="decimal" placeholder="não definida"></label>
-            <label class="rel-meta"><span>Meta CAC (R$)</span><input type="number" id="metaCac" min="0" step="1" inputmode="decimal" placeholder="não definida"></label>
-            <label class="rel-meta"><span>Volume mín. amostral (MQLs)</span><input type="number" id="metaVolMin" min="1" step="1"></label>
+            <label class="rel-meta"><span>Volume mín. amostral (Leads)</span><input type="number" id="metaVolMin" min="1" step="1"></label>
             <label class="rel-meta"><span>N dias p/ corte</span><input type="number" id="metaNdias" min="1" step="1"></label>
           </div>
           <p class="note" id="relMetasNote"></p>
@@ -179,12 +176,12 @@
         <h2 class="sec-title">Funil de leads &amp; evolução diária</h2>
         <div class="grid funnel-grid">
           <div class="card"><div class="funnel" id="relFunnel"></div>
-            <p class="note"><b>Leads = conversas iniciadas</b> pelo anúncio. Estágios MQL · Agendamentos · Reuniões · Vendas · Faturamento não têm fonte nesta conta e aparecem como “-”.</p>
+            <p class="note"><b>Leads = conversas iniciadas</b> pelo anúncio. Funil desta conta: Impressões → Cliques → Leads.</p>
           </div>
           <div class="panel">
             <div class="panel-chart"><h3>Evolução diária</h3><p class="hint">Leads (barras) · Gasto (linha vermelha) · CPL (linha)</p><div class="chart-box"><canvas id="rCombo"></canvas></div></div>
             <div class="tbl-wrap tbl-normal"><table class="dt" id="rDaily"></table></div>
-            <p class="note" style="padding:10px 15px 12px">Considera <b>todos os leads</b> (Meta + orgânico) e o gasto total. Heatmap por coluna (Gasto · Leads · MQLs) · último dia no topo · clique numa data para filtrar (Ctrl = várias). Valores em R$.</p>
+            <p class="note" style="padding:10px 15px 12px">Considera <b>todos os leads</b> (conversas iniciadas) e o gasto total. Heatmap por coluna (Gasto · Leads) · último dia no topo · clique numa data para filtrar (Ctrl = várias). Valores em R$.</p>
           </div>
         </div>
 
@@ -203,7 +200,7 @@
         <h2 class="sec-title">Top Anúncios <span class="pill q" id="relTopCount"></span></h2>
         <div class="card" style="padding:0">
           <div class="tbl-wrap"><table class="dt rel-adt" id="relTop"></table></div>
-          <p class="note" style="padding:10px 15px">Ranqueados pelo resultado mais profundo disponível (Vendas → MQLs quando houver; nesta conta, por <b>Leads</b> e CPL) com custo saudável e <b>amostra relevante</b>. Anúncios promissores sem amostra suficiente aparecem como <b>Em observação</b>. Link abre o criativo no Instagram em nova aba. Rolagem lateral dentro da tabela.</p>
+          <p class="note" style="padding:10px 15px">Ranqueados por <b>Leads</b> e <b>CPL</b> (resultado mais profundo disponível nesta conta) com <b>amostra relevante</b>. Anúncios promissores sem amostra suficiente aparecem como <b>Em observação</b>. Link abre o criativo no Instagram em nova aba. Rolagem lateral dentro da tabela.</p>
         </div>
 
 
